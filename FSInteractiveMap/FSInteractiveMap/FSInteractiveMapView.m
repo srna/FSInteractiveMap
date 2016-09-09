@@ -8,6 +8,7 @@
 
 #import "FSInteractiveMapView.h"
 #import "FSSVG.h"
+#import <UIKit/UIKit.h>
 
 @interface FSInteractiveMapView ()
 
@@ -38,19 +39,24 @@
 
 #pragma mark - SVG map loading
 
-- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict
+- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict inset:(CGRect)inset
 {
     _svg = [FSSVG svgWithFile:mapName];
     
     for (FSSVGPathElement* path in _svg.paths) {
+        // Create frame with inset
+        CGRect frameWithInset = CGRectMake(self.frame.origin.x + inset.origin.x, self.frame.origin.y + inset.origin.y, self.frame.size.width - (inset.size.width + inset.origin.x), self.frame.size.height - (inset.size.height + inset.origin.y));
+        
         // Make the map fits inside the frame
-        float scaleHorizontal = self.frame.size.width / _svg.bounds.size.width;
-        float scaleVertical = self.frame.size.height / _svg.bounds.size.height;
+        float scaleHorizontal = frameWithInset.size.width / _svg.bounds.size.width;
+        float scaleVertical = frameWithInset.size.height / _svg.bounds.size.height;
         float scale = MIN(scaleHorizontal, scaleVertical);
         
         CGAffineTransform scaleTransform = CGAffineTransformIdentity;
         scaleTransform = CGAffineTransformMakeScale(scale, scale);
         scaleTransform = CGAffineTransformTranslate(scaleTransform,-_svg.bounds.origin.x, -_svg.bounds.origin.y);
+        scaleTransform = CGAffineTransformTranslate(scaleTransform, inset.origin.x*2, inset.origin.y*2);
+        scaleTransform = CGAffineTransformTranslate(scaleTransform, (frameWithInset.size.width - _svg.bounds.size.width*scale), 0);
         
         UIBezierPath* scaled = [path.path copy];
         [scaled applyTransform:scaleTransform];
@@ -60,7 +66,7 @@
         
         // Setting CAShapeLayer properties
         shapeLayer.strokeColor = self.strokeColor.CGColor;
-        shapeLayer.lineWidth = 0.5;
+        shapeLayer.lineWidth = 0.4;
         
         if(path.fill) {
             if(colorsDict && [colorsDict objectForKey:path.identifier]) {
@@ -80,9 +86,9 @@
     }
 }
 
-- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors
+- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors inset:(CGRect)inset
 {
-    [self loadMap:mapName withColors:[self getColorsForData:data colorAxis:colors]];
+    [self loadMap:mapName withColors:[self getColorsForData:data colorAxis:colors] inset:inset];
 }
 
 - (NSDictionary*)getColorsForData:(NSDictionary*)data colorAxis:(NSArray*)colors

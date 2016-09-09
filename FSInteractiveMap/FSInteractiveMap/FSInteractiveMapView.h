@@ -18,8 +18,8 @@
 @property (nonatomic, copy) void (^clickHandler)(NSString* identifier, CAShapeLayer* layer);
 
 // Loading functions
-- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict;
-- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors;
+- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict inset:(CGRect)inset;
+- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors inset:(CGRect)inset;
 
 // Set the colors by element, if you want to make the map dynamic or update the colors
 - (void)setColors:(NSDictionary*)colorsDict;
