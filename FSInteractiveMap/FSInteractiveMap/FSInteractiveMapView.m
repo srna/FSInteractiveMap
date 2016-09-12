@@ -8,12 +8,14 @@
 
 #import "FSInteractiveMapView.h"
 #import "FSSVG.h"
+#import "FSLabel.h"
 #import <UIKit/UIKit.h>
 
 @interface FSInteractiveMapView ()
 
 @property (nonatomic, strong) FSSVG* svg;
 @property (nonatomic, strong) NSMutableArray* scaledPaths;
+@property (nonatomic, strong) NSMutableArray* countryLabels;
 
 @end
 
@@ -25,6 +27,22 @@
     
     if(self) {
         _scaledPaths = [NSMutableArray array];
+        _labels = [NSMutableArray array];
+        _countryLabels = [NSMutableArray array];
+        [self setDefaultParameters];
+    }
+    
+    return self;
+}
+
+- (id)initWithCoder:(NSCoder *)aDecoder
+{
+    self = [super initWithCoder:aDecoder];
+    
+    if(self) {
+        _scaledPaths = [NSMutableArray array];
+        _labels = [NSMutableArray array];
+        _countryLabels = [NSMutableArray array];
         [self setDefaultParameters];
     }
     
@@ -37,26 +55,80 @@
     self.strokeColor = [UIColor colorWithWhite:0.6 alpha:1];
 }
 
+#pragma mark - Labels
+
+- (void)addLabel:(FSLabel*)label
+{
+    CGRect frameWithInsets = CGRectMake(self.frame.origin.x + _insets.origin.x, self.frame.origin.y + _insets.origin.y, self.frame.size.width - (_insets.size.width + _insets.origin.x), self.frame.size.height - (_insets.size.height + _insets.origin.y));
+    float scaleHorizontal = frameWithInsets.size.width / _svg.bounds.size.width;
+    float scaleVertical = frameWithInsets.size.height / _svg.bounds.size.height;
+    float scale = MIN(scaleHorizontal, scaleVertical);
+    
+    UILabel *uiLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 0, 0)];
+    
+    uiLabel.text = label.title;
+    uiLabel.numberOfLines = 2;
+    uiLabel.textAlignment = NSTextAlignmentCenter;
+    
+    if(label.font)
+        uiLabel.font = label.font;
+    
+    if(label.color)
+        uiLabel.textColor = label.color;
+    
+    [uiLabel sizeToFit];
+    
+    [self addSubview:uiLabel];
+    label.uiLabel = uiLabel;
+    
+    [self positionLabel:label];
+    
+    [_labels addObject:label];
+}
+
+- (void)removeLabels
+{
+    while(_labels.count > 0)
+    {
+        FSLabel *label = _labels.lastObject;
+        [label.uiLabel removeFromSuperview];
+        _labels.removeLastObject;
+    }
+}
+
+- (void)positionLabel:(FSLabel*)label
+{
+    label.uiLabel.frame = CGRectMake(label.uiLabel.frame.origin.x, label.uiLabel.frame.origin.y, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height);
+    [label.uiLabel sizeToFit];
+    CGAffineTransform transform = [self getAffineTransform];
+    CGPoint position = CGPointApplyAffineTransform(label.position, transform);
+    position.x -= label.uiLabel.frame.size.width/2;
+    position.y -= label.uiLabel.frame.size.height/2;
+    label.uiLabel.frame = CGRectMake(position.x, position.y, label.uiLabel.frame.size.width, label.uiLabel.frame.size.height);
+}
+
+- (void)zoomLabelsWithScale:(CGFloat)scale screenScale:(CGFloat)screenScale
+{
+    [_labels enumerateObjectsUsingBlock: ^(id obj, NSUInteger idx, BOOL *stop) {
+        FSLabel* label = (FSLabel*)obj;
+        label.uiLabel.font = [label.uiLabel.font fontWithSize:(label.font.pointSize / scale)];
+        label.uiLabel.contentScaleFactor = scale * screenScale;
+        
+        [label.uiLabel sizeToFit];
+        [self positionLabel:label];
+    }];
+}
+
 #pragma mark - SVG map loading
 
-- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict inset:(CGRect)inset
+- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict titles:(NSDictionary*)titlesDict
 {
     _svg = [FSSVG svgWithFile:mapName];
     
+    [_countryLabels removeAllObjects];
+    
     for (FSSVGPathElement* path in _svg.paths) {
-        // Create frame with inset
-        CGRect frameWithInset = CGRectMake(self.frame.origin.x + inset.origin.x, self.frame.origin.y + inset.origin.y, self.frame.size.width - (inset.size.width + inset.origin.x), self.frame.size.height - (inset.size.height + inset.origin.y));
-        
-        // Make the map fits inside the frame
-        float scaleHorizontal = frameWithInset.size.width / _svg.bounds.size.width;
-        float scaleVertical = frameWithInset.size.height / _svg.bounds.size.height;
-        float scale = MIN(scaleHorizontal, scaleVertical);
-        
-        CGAffineTransform scaleTransform = CGAffineTransformIdentity;
-        scaleTransform = CGAffineTransformMakeScale(scale, scale);
-        scaleTransform = CGAffineTransformTranslate(scaleTransform,-_svg.bounds.origin.x, -_svg.bounds.origin.y);
-        scaleTransform = CGAffineTransformTranslate(scaleTransform, inset.origin.x*2, inset.origin.y*2);
-        scaleTransform = CGAffineTransformTranslate(scaleTransform, (frameWithInset.size.width - _svg.bounds.size.width*scale), 0);
+        CGAffineTransform scaleTransform = [self getAffineTransform];
         
         UIBezierPath* scaled = [path.path copy];
         [scaled applyTransform:scaleTransform];
@@ -82,13 +154,50 @@
         
         [self.layer addSublayer:shapeLayer];
         
+        CGPoint midPoint = [path getMidPoint];
+        
         [_scaledPaths addObject:scaled];
+        
+        if ([titlesDict objectForKey:path.identifier]) {
+            [_countryLabels addObject:[[FSLabel alloc]
+                                       initWithTitle:[titlesDict objectForKey:path.identifier]
+                                       tag:@"country_title"
+                                       color:[UIColor whiteColor]
+                                       font:[UIFont systemFontOfSize:10.0]
+                                       position:midPoint]];
+        }
     }
 }
 
-- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors inset:(CGRect)inset
+- (NSMutableArray*)getCountryLabels
 {
-    [self loadMap:mapName withColors:[self getColorsForData:data colorAxis:colors] inset:inset];
+    return _countryLabels;
+}
+
+- (CGAffineTransform)getAffineTransform
+{
+    // Create frame with insets
+    CGRect frameWithInsets = CGRectMake(self.frame.origin.x + _insets.origin.x, self.frame.origin.y + _insets.origin.y, self.frame.size.width - (_insets.size.width + _insets.origin.x), self.frame.size.height - (_insets.size.height + _insets.origin.y));
+    
+    // Make the map fits inside the frame
+    float scaleHorizontal = frameWithInsets.size.width / _svg.bounds.size.width;
+    float scaleVertical = frameWithInsets.size.height / _svg.bounds.size.height;
+    float scale = MIN(scaleHorizontal, scaleVertical);
+    
+    CGAffineTransform scaleTransform = CGAffineTransformIdentity;
+    scaleTransform = CGAffineTransformMakeScale(scale, scale);
+    scaleTransform = CGAffineTransformTranslate(scaleTransform,-_svg.bounds.origin.x, -_svg.bounds.origin.y);
+    scaleTransform = CGAffineTransformTranslate(scaleTransform, _insets.origin.x/scale, _insets.origin.y/scale);
+    
+    // Center
+    scaleTransform = CGAffineTransformTranslate(scaleTransform, (frameWithInsets.size.width/scale - _svg.bounds.size.width) / 2, (frameWithInsets.size.height/scale - _svg.bounds.size.height) / 2);
+    
+    return scaleTransform;
+}
+
+- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors titles:(NSDictionary*)titlesDict
+{
+    [self loadMap:mapName withColors:[self getColorsForData:data colorAxis:colors] titles: titlesDict];
 }
 
 - (NSDictionary*)getColorsForData:(NSDictionary*)data colorAxis:(NSArray*)colors
@@ -110,8 +219,9 @@
     
     for (id key in data) {
         NSNumber* value = [data objectForKey:key];
-        float s = ([value floatValue] - min) / (max - min);
-        float segmentLength = 1.0 / ([colors count] - 1);
+        float s = ([value floatValue] - min) / ( ((max-min) == 0 ? 1 : (max-min)) );
+        float segmentLength = 1.0 / ( (([colors count] - 1) == 0 ? 1 : ([colors count] - 1)) );
+        
         int minColorIndex = MAX(floorf(s / segmentLength),0);
         int maxColorIndex = MIN(ceilf(s / segmentLength), [colors count] - 1);
         

@@ -19,5 +19,6 @@
 @property (nonatomic) BOOL fill;
 
 - (instancetype)initWithAttributes:(NSDictionary *)attributes;
+- (CGPoint)getMidPoint;
 
 @end

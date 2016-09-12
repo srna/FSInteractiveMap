@@ -11,9 +11,24 @@
 
 @interface FSSVGPathElement()
 @property (nonatomic) CGPoint lastPoint;
+
+@property (nonatomic) CGPoint minPoint;
+@property (nonatomic) CGPoint maxPoint;
 @end
 
 @implementation FSSVGPathElement
+
+- (void) updateLastPointWithX:(CGFloat)x y:(CGFloat)y
+{
+    _minPoint.x = MIN(x, _minPoint.x);
+    _minPoint.y = MIN(y, _minPoint.y);
+    
+    _maxPoint.x = MAX(x, _maxPoint.x);
+    _maxPoint.y = MAX(y, _maxPoint.y);
+    
+    _lastPoint.x = x;
+    _lastPoint.y = y;
+}
 
 - (instancetype)initWithAttributes:(NSDictionary *)attributes
 {
@@ -24,6 +39,10 @@
     }
     
     _lastPoint.x = _lastPoint.y = 0;
+    
+    _minPoint = CGPointMake(INFINITY, INFINITY);
+    _maxPoint = CGPointMake(-INFINITY, -INFINITY);
+    
     self.fill = NO;
     self.title = [attributes objectForKey:@"title"];
     self.identifier = [attributes objectForKey:@"id"];
@@ -77,6 +96,13 @@
     [self executeCommand:currentCommand forValue:value];
     
     free(value);
+}
+
+- (CGPoint)getMidPoint
+{
+    CGFloat width = _maxPoint.x - _minPoint.x;
+    CGFloat height = _maxPoint.y - _minPoint.y;
+    return CGPointMake(_minPoint.x + width/2, _minPoint.y + height/2);
 }
 
 - (void)executeCommand:(char)command forValue:(const char*)value
@@ -152,9 +178,9 @@
         p.y = [coordinates[i * 2 + 1] floatValue];
         
         if(isAbsolute)
-            _lastPoint = p;
+            [self updateLastPointWithX:p.x y:p.y];
         else
-            _lastPoint = CGPointMake(p.x + _lastPoint.x, p.y + _lastPoint.y);
+            [self updateLastPointWithX:p.x + _lastPoint.x y:p.y + _lastPoint.y];
         
         [_path moveToPoint:_lastPoint];
     }
@@ -173,9 +199,9 @@
         p.y = [coordinates[i * 2 + 1] floatValue];
         
         if(isAbsolute)
-            _lastPoint = p;
+            [self updateLastPointWithX:p.x y:p.y];
         else
-            _lastPoint = CGPointMake(p.x + _lastPoint.x, p.y + _lastPoint.y);
+            [self updateLastPointWithX:p.x + _lastPoint.x y:p.y + _lastPoint.y];
         
         [_path addLineToPoint:_lastPoint];
     }
@@ -192,11 +218,10 @@
         float value = [coordinates[i * 2] floatValue];
         
         if(isAbsolute)
-            _lastPoint.x = value;
+            [self updateLastPointWithX:value y:_lastPoint.y];
         else
-            _lastPoint = CGPointMake(value + _lastPoint.x, _lastPoint.y);
+            [self updateLastPointWithX:value + _lastPoint.x y:_lastPoint.y];
         
-            
         [_path addLineToPoint:_lastPoint];
     }
 }
@@ -212,9 +237,9 @@
         float value = [coordinates[i * 2] floatValue];
         
         if(isAbsolute)
-            _lastPoint.y = value;
+            [self updateLastPointWithX:_lastPoint.x y:value];
         else
-            _lastPoint = CGPointMake(_lastPoint.x, value + _lastPoint.y);
+            [self updateLastPointWithX:_lastPoint.x y:value+_lastPoint.y];
         
         
         [_path addLineToPoint:_lastPoint];
@@ -240,7 +265,7 @@
         p.y = [coordinates[i * 6 + 5] floatValue];
         
         if(isAbsolute) {
-            _lastPoint = CGPointMake(p.x, p.y);
+            [self updateLastPointWithX:p.x y:p.y];
             [_path addCurveToPoint:_lastPoint
                      controlPoint1:CGPointMake(c1.x, c1.y)
                      controlPoint2:CGPointMake(c2.x, c2.y)];
@@ -248,8 +273,7 @@
             [_path addCurveToPoint:CGPointMake(_lastPoint.x + p.x, _lastPoint.y + p.y)
                      controlPoint1:CGPointMake(_lastPoint.x + c1.x, _lastPoint.y + c1.y)
                      controlPoint2:CGPointMake(_lastPoint.x + c2.x, _lastPoint.y + c2.y)];
-            
-            _lastPoint = CGPointMake(_lastPoint.x + p.x, _lastPoint.y + p.y);
+            [self updateLastPointWithX:_lastPoint.x + p.x y:_lastPoint.y + p.y];
         }
         
     }
