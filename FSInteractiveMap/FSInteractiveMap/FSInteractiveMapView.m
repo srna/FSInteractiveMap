@@ -88,12 +88,10 @@
 
 - (void)removeLabels
 {
-    while(_labels.count > 0)
-    {
-        FSLabel *label = _labels.lastObject;
-        [label.uiLabel removeFromSuperview];
-        _labels.removeLastObject;
-    }
+    [_labels enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        [((FSLabel*)obj).uiLabel removeFromSuperview];
+    }];
+    _labels = [NSMutableArray array];
 }
 
 - (void)positionLabel:(FSLabel*)label
@@ -126,6 +124,7 @@
     _svg = [FSSVG svgWithFile:mapName];
     
     [_countryLabels removeAllObjects];
+    [_scaledPaths removeAllObjects];
     
     for (FSSVGPathElement* path in _svg.paths) {
         CGAffineTransform scaleTransform = [self getAffineTransform];
