@@ -16,12 +16,13 @@
 @property (nonatomic, strong) UIColor* strokeColor;
 @property (nonatomic, strong) NSMutableArray* labels;
 @property (nonatomic) CGRect insets;
+@property (nonatomic, strong) UIFont* countryFont;
 
 // Click handler
 @property (nonatomic, copy) void (^clickHandler)(NSString* identifier, CAShapeLayer* layer);
 
 // Loading functions
-- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict titles:(NSDictionary*)titlesDict;
+- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict strokeColors:(NSDictionary*)strokeColors titles:(NSDictionary*)titlesDict;
 - (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors titles:(NSDictionary*)titlesDict;
 
 // Set the colors by element, if you want to make the map dynamic or update the colors

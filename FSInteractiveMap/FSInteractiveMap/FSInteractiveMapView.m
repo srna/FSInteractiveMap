@@ -121,7 +121,7 @@
 
 #pragma mark - SVG map loading
 
-- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict titles:(NSDictionary*)titlesDict
+- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict strokeColors:(NSDictionary*)strokeColors titles:(NSDictionary*)titlesDict
 {
     _svg = [FSSVG svgWithFile:mapName];
     
@@ -137,7 +137,13 @@
         shapeLayer.path = scaled.CGPath;
         
         // Setting CAShapeLayer properties
-        shapeLayer.strokeColor = self.strokeColor.CGColor;
+        if(strokeColors && [strokeColors objectForKey:path.identifier]) {
+            UIColor* color = color;
+            shapeLayer.strokeColor = color.CGColor;
+        } else {
+            shapeLayer.strokeColor = self.strokeColor.CGColor;
+        }
+        
         shapeLayer.lineWidth = 0.4;
         
         if(path.fill) {
@@ -163,7 +169,7 @@
                                        initWithTitle:[titlesDict objectForKey:path.identifier]
                                        tag:@"country_title"
                                        color:[UIColor whiteColor]
-                                       font:[UIFont systemFontOfSize:10.0]
+                                       font:_countryFont
                                        position:midPoint]];
         }
     }
@@ -197,7 +203,7 @@
 
 - (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors titles:(NSDictionary*)titlesDict
 {
-    [self loadMap:mapName withColors:[self getColorsForData:data colorAxis:colors] titles: titlesDict];
+    [self loadMap:mapName withColors:[self getColorsForData:data colorAxis:colors] strokeColors:nil titles: titlesDict];
 }
 
 - (NSDictionary*)getColorsForData:(NSDictionary*)data colorAxis:(NSArray*)colors
