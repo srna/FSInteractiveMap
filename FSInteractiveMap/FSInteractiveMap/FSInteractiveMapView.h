@@ -7,6 +7,7 @@
 //
 
 #import "FSLabel.h"
+#import "FSSVGPathElement.h"
 #import <UIKit/UIKit.h>
 
 @interface FSInteractiveMapView : UIView
@@ -22,8 +23,8 @@
 @property (nonatomic, copy) void (^clickHandler)(NSString* identifier, CAShapeLayer* layer);
 
 // Loading functions
-- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict strokeColors:(NSDictionary*)strokeColors titles:(NSDictionary*)titlesDict;
-- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors titles:(NSDictionary*)titlesDict;
+- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict strokeColors:(NSDictionary*)strokeColors;
+- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors;
 
 // Set the colors by element, if you want to make the map dynamic or update the colors
 - (void)setColors:(NSDictionary*)colorsDict;
@@ -31,6 +32,9 @@
 
 // Layers enumeration
 - (void)enumerateLayersUsingBlock:(void(^)(NSString* identifier, CAShapeLayer* layer))block;
+
+// Paths enumeration
+- (void)enumeratePathElementsUsingBlock:(void (^)(FSSVGPathElement*))block;
 
 // Labels
 - (void)addLabel:(FSLabel*)label;

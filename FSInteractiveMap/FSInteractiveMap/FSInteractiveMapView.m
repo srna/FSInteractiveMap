@@ -15,7 +15,6 @@
 
 @property (nonatomic, strong) FSSVG* svg;
 @property (nonatomic, strong) NSMutableArray* scaledPaths;
-@property (nonatomic, strong) NSMutableArray* countryLabels;
 
 @end
 
@@ -28,7 +27,6 @@
     if(self) {
         _scaledPaths = [NSMutableArray array];
         _labels = [NSMutableArray array];
-        _countryLabels = [NSMutableArray array];
         [self setDefaultParameters];
     }
     
@@ -42,7 +40,6 @@
     if(self) {
         _scaledPaths = [NSMutableArray array];
         _labels = [NSMutableArray array];
-        _countryLabels = [NSMutableArray array];
         [self setDefaultParameters];
     }
     
@@ -119,11 +116,10 @@
 
 #pragma mark - SVG map loading
 
-- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict strokeColors:(NSDictionary*)strokeColors titles:(NSDictionary*)titlesDict
+- (void)loadMap:(NSString*)mapName withColors:(NSDictionary*)colorsDict strokeColors:(NSDictionary*)strokeColors
 {
     _svg = [FSSVG svgWithFile:mapName];
     
-    [_countryLabels removeAllObjects];
     [_scaledPaths removeAllObjects];
     
     for (FSSVGPathElement* path in _svg.paths) {
@@ -162,21 +158,7 @@
         CGPoint midPoint = [path getMidPoint];
         
         [_scaledPaths addObject:scaled];
-        
-        if ([titlesDict objectForKey:path.identifier]) {
-            [_countryLabels addObject:[[FSLabel alloc]
-                                       initWithTitle:[titlesDict objectForKey:path.identifier]
-                                       tag:@"country_title"
-                                       color:[UIColor whiteColor]
-                                       font:_countryFont
-                                       position:midPoint]];
-        }
     }
-}
-
-- (NSMutableArray*)getCountryLabels
-{
-    return _countryLabels;
 }
 
 - (CGAffineTransform)getAffineTransform
@@ -200,9 +182,9 @@
     return scaleTransform;
 }
 
-- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors titles:(NSDictionary*)titlesDict
+- (void)loadMap:(NSString*)mapName withData:(NSDictionary*)data colorAxis:(NSArray*)colors
 {
-    [self loadMap:mapName withColors:[self getColorsForData:data colorAxis:colors] strokeColors:nil titles: titlesDict];
+    [self loadMap:mapName withColors:[self getColorsForData:data colorAxis:colors] strokeColors:nil];
 }
 
 - (NSDictionary*)getColorsForData:(NSDictionary*)data colorAxis:(NSArray*)colors
@@ -296,6 +278,16 @@
             CAShapeLayer* l = (CAShapeLayer*)self.layer.sublayers[i];
             block(element.identifier, l);
         }
+    }
+}
+
+#pragma mark - Paths enumeration
+
+- (void)enumeratePathElementsUsingBlock:(void (^)(FSSVGPathElement*))block
+{
+    for(int i = 0; i<[_svg.paths count]; i++) {
+        FSSVGPathElement *path = _svg.paths[i];
+        block(path);
     }
 }
 
