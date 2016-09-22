@@ -97,7 +97,20 @@
     [label.uiLabel sizeToFit];
     CGAffineTransform transform = [self getAffineTransform];
     CGPoint position = CGPointApplyAffineTransform(label.position, transform);
-    position.x -= label.uiLabel.frame.size.width/2;
+    switch (label.alignment) {
+        case NSTextAlignmentLeft:
+        // Position is okay
+        break;
+        
+        case NSTextAlignmentRight:
+        position.x -= label.uiLabel.frame.size.width;
+        break;
+        
+        default:
+        position.x -= label.uiLabel.frame.size.width/2;
+        break;
+    }
+    
     position.y -= label.uiLabel.frame.size.height/2;
     label.uiLabel.frame = CGRectMake(position.x, position.y, label.uiLabel.frame.size.width, label.uiLabel.frame.size.height);
 }
