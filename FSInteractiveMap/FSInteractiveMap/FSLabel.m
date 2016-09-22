@@ -15,7 +15,7 @@
 
 @implementation FSLabel
 
-- (nonnull id) initWithTitle:(nonnull NSString*)title tag:(nonnull NSString*)tag color:(nullable UIColor*)color font:(nullable UIFont*)font position:(CGPoint)position alignment:(NSTextAlignment)alignment {
+- (nonnull id) initWithTitle:(nonnull NSString*)title tag:(nonnull NSString*)tag color:(nullable UIColor*)color font:(nullable UIFont*)font position:(CGPoint)position alignment:(NSTextAlignment)alignment scaleAt:(CGFloat)zoomScaleFactor {
     _title = title;
     _tag = tag;
     _color = color;
@@ -23,6 +23,7 @@
     _position = position;
     _uiLabel = nil;
     _alignment = alignment;
+    _zoomScaleFactor = zoomScaleFactor;
     
     return self;
 }

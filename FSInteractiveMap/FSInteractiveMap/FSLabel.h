@@ -18,8 +18,9 @@
 @property (nonatomic) CGPoint position;
 @property (nonatomic, strong, nullable) UILabel* uiLabel;
 @property (nonatomic) NSTextAlignment alignment;
+@property (nonatomic) CGFloat zoomScaleFactor;
 
-- (nonnull id) initWithTitle:(nonnull NSString*)title tag:(nonnull NSString*)tag color:(nullable UIColor*)color font:(nullable UIFont*)font position:(CGPoint)position alignment:(NSTextAlignment)alignment;
+- (nonnull id) initWithTitle:(nonnull NSString*)title tag:(nonnull NSString*)tag color:(nullable UIColor*)color font:(nullable UIFont*)font position:(CGPoint)position alignment:(NSTextAlignment)alignment scaleAt:(CGFloat)zoomScaleFactor;
 
 @end
 

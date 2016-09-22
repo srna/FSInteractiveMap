@@ -86,7 +86,9 @@
 - (void)removeLabels
 {
     [_labels enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        [((FSLabel*)obj).uiLabel removeFromSuperview];
+        if (((FSLabel*)obj) != nil && ((FSLabel*)obj).uiLabel != nil) {
+            [((FSLabel*)obj).uiLabel removeFromSuperview];
+        }
     }];
     _labels = [NSMutableArray array];
 }
@@ -119,8 +121,14 @@
 {
     [_labels enumerateObjectsUsingBlock: ^(id obj, NSUInteger idx, BOOL *stop) {
         FSLabel* label = (FSLabel*)obj;
-        label.uiLabel.font = [label.uiLabel.font fontWithSize:(label.font.pointSize / scale)];
-        label.uiLabel.contentScaleFactor = scale * screenScale;
+        
+        if(label.zoomScaleFactor > 0) {
+            label.uiLabel.font = [label.uiLabel.font fontWithSize:((label.font.pointSize / scale) * pow(scale, label.zoomScaleFactor))];
+            label.uiLabel.contentScaleFactor = scale * screenScale * pow(scale, label.zoomScaleFactor);
+        } else {
+            label.uiLabel.font = [label.uiLabel.font fontWithSize:(label.font.pointSize / scale)];
+            label.uiLabel.contentScaleFactor = scale * screenScale;
+        }
         
         [label.uiLabel sizeToFit];
         [self positionLabel:label];
