@@ -85,11 +85,6 @@
 
 - (void)removeLabels
 {
-    [_labels enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        if (((FSLabel*)obj) != nil && ((FSLabel*)obj).uiLabel != nil) {
-            [((FSLabel*)obj).uiLabel removeFromSuperview];
-        }
-    }];
     _labels = [NSMutableArray array];
 }
 
